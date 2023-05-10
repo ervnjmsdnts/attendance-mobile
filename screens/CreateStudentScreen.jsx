@@ -3,9 +3,6 @@ import Back from '../components/Back';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Input from '../components/Input';
-import { useEffect, useState } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import useCustomMutation from '../utils/useCustomMutation';
@@ -17,11 +14,10 @@ const createStudentSchema = z.object({
   firstName: z.string().nonempty({ message: 'Field is required' }),
   middleName: z.string().nonempty({ message: 'Field is required' }),
   lastName: z.string().nonempty({ message: 'Field is required' }),
+  idNumber: z.string().nonempty({ message: 'Field is required' }),
 });
 
 const CreateStudentScreen = () => {
-  const [studentId, setStudentId] = useState(null);
-
   const {
     control,
     formState: { errors },
@@ -37,28 +33,9 @@ const CreateStudentScreen = () => {
     },
   });
 
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
-      setStudentId(
-        (
-          snapshot.docs
-            .map((doc) => ({ id: doc.id, ...doc.data() }))
-            .filter((doc) => doc.role === 'STUDENT').length + 1
-        )
-          .toString()
-          .padStart(6, '0')
-      );
-    });
-
-    return () => {
-      unsub();
-    };
-  }, []);
-
   const onSubmit = async (data) => {
     const payload = {
       ...data,
-      idNumber: studentId,
       school: currentUser.school,
     };
 
@@ -108,8 +85,13 @@ const CreateStudentScreen = () => {
         <Controller
           name="idNumber"
           control={control}
-          render={() => (
-            <Input editable={false} placeholder="ID Number" value={studentId} />
+          render={({ field: { value, onChange } }) => (
+            <Input
+              placeholder="ID Number"
+              error={errors?.idNumber}
+              value={value}
+              onChangeText={onChange}
+            />
           )}
         />
         <TouchableOpacity

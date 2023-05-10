@@ -22,6 +22,14 @@ export const login = async (payload = {}) => {
 };
 
 export const createStudent = async (payload = {}) => {
+  const conditions = [
+    where('idNumber', '==', payload.idNumber),
+    where('schoo', '==', payload.school),
+  ];
+  const userRef = collection(db, 'users');
+  const filterQuery = query(userRef, ...conditions);
+  const user = await getDocs(filterQuery);
+  if (user.size) return Promise.reject('Student ID already exist');
   const res = await addDoc(collection(db, 'users'), {
     ...payload,
     role: 'STUDENT',
